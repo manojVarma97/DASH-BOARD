@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EOL Test Results</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #0f172a;
+      color: #ffffff;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /*
+      ORIGINAL 2-column layout preserved exactly:
+      ┌──────────────────┬──────────────────────────┐
+      │  LEFT COLUMN     │  TOP: gauges             │
+      │  (camera feed    │  MID: results panel      │
+      │   + OK/NG below) │  BOT: barcode scanner    │
+      └──────────────────┴──────────────────────────┘
+    */
+    .container {
+      display: grid;
+      grid-template-columns: 55% 45%;
+      grid-template-rows: 100px 1fr 220px;
+      height: 100vh;
+      gap: 10px;
+      padding: 10px;
+    }
+
+    /* ── LEFT COLUMN: camera feed (top) + counters (bottom) ── */
+    .left-col {
+      grid-column: 1;
+      grid-row: 1 / 4;          /* span all 3 rows, same as original camera */
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Camera feed — takes most of the left column */
+    .camera-wrap {
+      flex: 1;                   /* grows to fill available space */
+      background: #000;
+      border-radius: 12px;
+      padding: 6px;
+      overflow: hidden;
+      min-height: 0;
+    }
+    .camera-wrap iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 8px;
+    }
+
+    /* OK / NG counters — compact strip at the bottom of left col */
+    .counters {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+      height: 100px;             /* fixed compact height */
+    }
+
+    .counter {
+      flex: 1;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-shadow: inset 0 0 14px rgba(0,0,0,0.7);
+    }
+    .counter.ok {
+      background: #052e16;
+      border: 2px solid #22c55e;
+    }
+    .counter.ng {
+      background: #1f0707;
+      border: 2px solid #ef4444;
+    }
+    .counter h3 {
+      font-size: 12px;
+      letter-spacing: 2px;
+    }
+    .counter.ok h3 { color: #22c55e; }
+    .counter.ng h3 { color: #ef4444; }
+    .counter .count {
+      font-size: 38px;
+      font-weight: bold;
+      margin-top: 2px;
+      line-height: 1;
+    }
+    .counter.ok .count { color: #4ade80; }
+    .counter.ng .count { color: #f87171; }
+
+    /* ── RIGHT TOP: Measurement Gauges ── */
+    .gauges {
+      grid-column: 2;
+      grid-row: 1;
+      display: flex;
+      gap: 10px;
+    }
+    .gauge {
+      flex: 1;
+      background: #1e293b;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 10px 4px;
+      box-shadow: inset 0 0 12px rgba(0,0,0,0.6);
+    }
+    .gauge h3 {
+      font-size: 14px;
+      color: #38bdf8;
+    }
+    .gauge .value {
+      font-size: 34px;
+      font-weight: bold;
+      margin-top: 6px;
+    }
+
+    /* ── RIGHT MID: Test Results ── */
+    .results {
+      grid-column: 2;
+      grid-row: 2;
+      background: #020617;
+      border-radius: 12px;
+      padding: 12px;
+      overflow-y: auto;
+    }
+    .variant-header {
+      font-size: 16px;
+      font-weight: bold;
+      color: #38bdf8;
+      margin-bottom: 6px;
+    }
+    .results h3 {
+      color: #22c55e;
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+    .results ul { list-style: none; }
+    .results li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .status-pass { color: #22c55e; font-weight: bold; }
+    .status-fail { color: #ef4444; font-weight: bold; }
+
+    /* ── RIGHT BOT: Barcode Scanner ── */
+    .barcode {
+      grid-column: 2;
+      grid-row: 3;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 6px;
+      min-height: 0;
+    }
+    .barcode iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+<div class="container">
+
+  <!-- LEFT COLUMN: camera + counters -->
+  <div class="left-col">
+
+    <div class="camera-wrap">
+      <iframe src="http://192.168.1.103/iv4-wm.html"></iframe>
+    </div>
+
+    <div class="counters">
+      <div class="counter ok">
+        <h3>✔ OK COUNT</h3>
+        <div class="count" id="okCount">0</div>
+      </div>
+      <div class="counter ng">
+        <h3>✘ NG COUNT</h3>
+        <div class="count" id="ngCount">0</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT TOP: Measurement Gauges -->
+  <div class="gauges">
+    <div class="gauge">
+      <h3>MASTER Ω</h3>
+      <div class="value" id="masterVal">--</div>
+    </div>
+    <div class="gauge">
+      <h3>JOB Ω</h3>
+      <div class="value" id="jobVal">--</div>
+    </div>
+    <div class="gauge">
+      <h3>IR</h3>
+      <div class="value" id="irVal">--</div>
+    </div>
+  </div>
+
+  <!-- RIGHT MID: Test Results -->
+  <div class="results">
+    <div id="variantHeader" class="variant-header">VARIANT : --</div>
+    <h3>TEST RESULTS</h3>
+    <ul id="testResults"></ul>
+  </div>
+
+  <!-- RIGHT BOT: Barcode Scanner -->
+  <div class="barcode">
+    <iframe src="/scanner"></iframe>
+  </div>
+
+</div>
+
+<script>
+  let okCount = 0;
+  let ngCount = 0;
+  let lastFinalResult = null;
+
+  async function updateUI() {
+    try {
+      const res  = await fetch('/api/results');
+      const data = await res.json();
+
+      document.getElementById("variantHeader").innerText =
+        `VARIANT : ${data.variant || "NA"}`;
+
+      document.getElementById("masterVal").innerText =
+        Number(data.gauges?.master_ohm || 0).toFixed(2) + " kΩ";
+      document.getElementById("jobVal").innerText =
+        Number(data.gauges?.job_ohm || 0).toFixed(2) + " kΩ";
+      document.getElementById("irVal").innerText =
+        data.gauges?.ir_value ?? "--";
+
+      const list = document.getElementById("testResults");
+      list.innerHTML = "";
+
+      // LENGTH CHECK
+      const lengthVal = Number(data.critical_length || 0);
+      addRow(list,
+        `<strong>LENGTH CHECK</strong> : ${lengthVal.toFixed(1)} mm`,
+        lengthVal > 0 ? "PASS" : "FAIL"
+      );
+
+      // OTHER TESTS
+      let irPassed   = false;
+      let ohmsPassed = false;
+
+      (data.tests || []).forEach(t => {
+        let displayValue = (t.value || "").replace(
+          /([\d.]+)\s*Ω(?![a-zA-Z])/g,
+          (_, val) => (Number(val) / 1000).toFixed(3) + " kΩ"
+        );
+        addRow(list, `<strong>${t.name}</strong> : ${displayValue}`, t.status);
+
+        const name = (t.name || "").toUpperCase();
+        if (name.includes("IR"))   irPassed   = t.status === "PASS";
+        if (name.includes("OHMS")) ohmsPassed = t.status === "PASS";
+      });
+
+      // FINAL RESULT — PASS only if BOTH IR and OHMS pass
+      const computedFinal = (irPassed && ohmsPassed) ? "PASS" : "FAIL";
+      const finalLi = addRow(list, "<strong>FINAL RESULT</strong>", computedFinal);
+      finalLi.style.marginTop = "10px";
+
+      // UPDATE OK / NG COUNTERS on result change
+      if (computedFinal !== lastFinalResult) {
+        if (lastFinalResult !== null) {
+          if (computedFinal === "PASS") okCount++;
+          else                          ngCount++;
+        }
+        lastFinalResult = computedFinal;
+        document.getElementById("okCount").innerText = okCount;
+        document.getElementById("ngCount").innerText = ngCount;
+      }
+
+    } catch (err) {
+      console.error("API Error:", err);
+    }
+  }
+
+  function addRow(list, html, status) {
+    const li    = document.createElement("li");
+    const text  = document.createElement("span");
+    const badge = document.createElement("span");
+    text.innerHTML   = html;
+    badge.innerText  = status;
+    badge.className  = status === "PASS" ? "status-pass" : "status-fail";
+    li.appendChild(text);
+    li.appendChild(badge);
+    list.appendChild(li);
+    return li;
+  }
+
+  setInterval(updateUI, 500);
+  updateUI();
+</script>
+</body>
+</html>
